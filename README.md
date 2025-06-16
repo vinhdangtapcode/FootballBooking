@@ -1,13 +1,21 @@
 # Hệ Thống Đặt Sân Bóng Đá
 
-Một ứng dụng Spring Boot để quản lý việc đặt sân bóng đá, xác thực người dùng và các chức năng liên quan.
+Một ứng dụng Spring Boot để quản lý việc đặt sân, cho thuê sân bóng dá trực tuyến, dễ dàng.
 
 ## Tính Năng
 - Đăng ký và đăng nhập người dùng (dựa trên JWT)
-- Đặt sân bóng đá
-- Quản lý danh sách yêu thích và đánh giá
-- Quản lý chủ sân và quản trị viên
-- Xem lịch sử đặt sân
+- Với người dùng(Người đặt sân):
+  + Đặt sân bóng đá
+  + Tìm kiếm sân
+  + Thêm sân yêu thích
+  + Xem lịch sử đặt sân
+  + Quản lý thông báo
+  + Thay đổi thông tin cá nhân
+- Với chủ sân(Người cho thuê sân):
+  + Quản lý sân cho thuê(Thêm, sửa, xóa)
+  + Xem lịch sử các yêu cầu đặt sân từ người dùng
+  + Quản lý thông báo
+  + Thay đổi thông tin cá nhân
 
 ## Công Nghệ Sử Dụng
 - Java 17 trở lên
@@ -15,19 +23,17 @@ Một ứng dụng Spring Boot để quản lý việc đặt sân bóng đá, x
 - Spring Security (JWT)
 - Maven
 - JPA/Hibernate
-- MySQL (hoặc hệ quản trị cơ sở dữ liệu khác)
+- PostgreSQL (hoặc hệ quản trị cơ sở dữ liệu khác)
 
-## Bắt Đầu
-
-### Yêu Cầu
+### Yêu Cầu Cài Đặt
 - Java 17 hoặc cao hơn
 - Maven
-- MySQL (hoặc cập nhật datasource trong `application.properties`)
+- PostgreSQL (hoặc cập nhật datasource trong `application.properties`)
 
 ### Cài Đặt
 1. **Clone repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/vinhdangtapcode/FootballBooking.git
    cd football-booking
    ```
 2. **Cấu hình cơ sở dữ liệu:**
@@ -47,12 +53,7 @@ Một ứng dụng Spring Boot để quản lý việc đặt sân bóng đá, x
 - Quản lý sân: `/api/fields`
 - Yêu thích: `/api/favorites`
 - Đánh giá: `/api/ratings`
-
 (Xem các lớp controller để biết chi tiết đầy đủ.)
 
 ## Cấu Hình
 - `application.properties` chứa tất cả các thiết lập riêng cho môi trường.
-- JWT secret và thời gian hết hạn phải được thiết lập để xác thực hoạt động.
-
-## Giấy Phép
-Dự án này chỉ dành cho mục đích giáo dục.
