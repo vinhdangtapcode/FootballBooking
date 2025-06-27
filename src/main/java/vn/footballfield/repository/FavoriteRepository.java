@@ -12,6 +12,8 @@ import java.util.List;
 public interface FavoriteRepository extends JpaRepository<Favorite, Integer> {
 	List<Favorite> findByCustomerId(Integer customerId);
 
+	List<Favorite> findByField_Id(Integer fieldId);
+
 	@Modifying
 	@Transactional
 	@Query("DELETE FROM Favorite f WHERE f.customerId = :customerId AND f.field.id = :fieldId")

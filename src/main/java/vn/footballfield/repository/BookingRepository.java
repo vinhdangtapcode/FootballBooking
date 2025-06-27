@@ -14,3 +14,4 @@ public interface BookingRepository extends JpaRepository<Book, Integer> {
 
 	List<Book> findByField_Id(Integer id);
 }
+

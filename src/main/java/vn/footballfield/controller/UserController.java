@@ -64,6 +64,13 @@ public class UserController {
 				.orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
 	}
 
+	// API tạo người dùng mới với ID cụ thể (dành cho Admin)
+	@PostMapping("/{id:\\d+}")
+	public ResponseEntity<User> createUserWithId(@PathVariable Integer id, @Valid @RequestBody User user) {
+		user.setId(id);
+		return new ResponseEntity<>(userService.registerUser(user), HttpStatus.CREATED);
+	}
+
 	@PutMapping("/{id:\\d+}")
 	public ResponseEntity<User> updateUser(@PathVariable Integer id, @Valid @RequestBody User user) {
 		User updated = userService.updateUser(id, user);
@@ -110,6 +117,18 @@ public class UserController {
 		}
 	}
 
+	// ADMIN reset password cho user khác
+	@PostMapping("/{id:\\d+}/reset-password")
+	public ResponseEntity<?> adminResetPassword(@PathVariable Integer id,
+	                                          @Valid @RequestBody vn.footballfield.dto.AdminResetPasswordRequest request) {
+		try {
+			userService.adminResetPassword(id, request.getNewPassword());
+			return ResponseEntity.ok("Password has been reset successfully");
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
+	}
+
 	// Lấy thông báo của user
 	@GetMapping("/notifications")
 	public ResponseEntity<List<vn.footballfield.entity.Notification>> getUserNotifications() {
@@ -150,3 +169,4 @@ public class UserController {
 		return ResponseEntity.noContent().build();
 	}
 }
+

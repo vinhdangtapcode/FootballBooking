@@ -4,9 +4,13 @@ package vn.footballfield.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.footballfield.entity.Owner;
 import vn.footballfield.entity.User;
+import vn.footballfield.repository.BookingRepository;
+import vn.footballfield.repository.FavoriteRepository;
 import vn.footballfield.repository.OwnerRepository;
+import vn.footballfield.repository.RatingRepository;
 import vn.footballfield.repository.UserRepository;
 
 import javax.validation.Valid;
@@ -24,6 +28,15 @@ public class UserService {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	@Autowired
+	private BookingRepository bookingRepository;
+
+	@Autowired
+	private RatingRepository ratingRepository;
+
+	@Autowired
+	private FavoriteRepository favoriteRepository;
 
 	public User registerUser(@Valid User user) {
 		if (userRepository.findByEmail(user.getEmail()).isPresent()) {
@@ -92,7 +105,32 @@ public class UserService {
 		return null;
 	}
 
+	@Transactional
 	public void deleteUser(Integer id) {
+		// Check if user exists
+		Optional<User> userOptional = userRepository.findById(id);
+		if (userOptional.isEmpty()) {
+			throw new RuntimeException("User not found with id: " + id);
+		}
+
+		User user = userOptional.get();
+
+		// Delete all related records first to avoid foreign key constraint violations
+
+		// 1. Delete all bookings by this customer
+		bookingRepository.deleteAll(bookingRepository.findByCustomerId(id));
+
+		// 2. Delete all ratings by this customer
+		ratingRepository.deleteAll(ratingRepository.findByCustomerId(id));
+
+		// 3. Delete all favorites by this customer
+		favoriteRepository.deleteAll(favoriteRepository.findByCustomerId(id));
+
+		// 4. If the user is an owner, delete owner record
+		ownerRepository.findByEmail(user.getEmail())
+			.ifPresent(owner -> ownerRepository.delete(owner));
+
+		// 5. Finally, delete the user
 		userRepository.deleteById(id);
 	}
 
@@ -108,6 +146,14 @@ public class UserService {
 		if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
 			throw new RuntimeException("Old password is incorrect");
 		}
+		user.setPassword(passwordEncoder.encode(newPassword));
+		userRepository.save(user);
+	}
+
+	// ADMIN reset password for any user (không cần mật khẩu cũ)
+	public void adminResetPassword(Integer userId, String newPassword) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
 		user.setPassword(passwordEncoder.encode(newPassword));
 		userRepository.save(user);
 	}

@@ -6,7 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.footballfield.entity.Field;
 import vn.footballfield.entity.Owner;
+import vn.footballfield.repository.BookingRepository;
+import vn.footballfield.repository.FavoriteRepository;
 import vn.footballfield.repository.FieldRepository;
+import vn.footballfield.repository.RatingRepository;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -17,6 +20,15 @@ public class FieldService {
 
 	@Autowired
 	private FieldRepository fieldRepository;
+
+	@Autowired
+	private BookingRepository bookingRepository;
+
+	@Autowired
+	private RatingRepository ratingRepository;
+
+	@Autowired
+	private FavoriteRepository favoriteRepository;
 
 	public List<Field> getAllFields() {
 		return fieldRepository.findAll();
@@ -52,7 +64,26 @@ public class FieldService {
 		return null;
 	}
 
+	@Transactional
 	public void deleteField(Integer id) {
+		// Check if field exists
+		Optional<Field> fieldOptional = fieldRepository.findById(id);
+		if (fieldOptional.isEmpty()) {
+			throw new RuntimeException("Field not found with id: " + id);
+		}
+
+		// Delete all related records first to avoid foreign key constraint violations
+
+		// 1. Delete all bookings for this field
+		bookingRepository.deleteAll(bookingRepository.findByField_Id(id));
+
+		// 2. Delete all ratings for this field
+		ratingRepository.deleteAll(ratingRepository.findByFieldId(id));
+
+		// 3. Delete all favorites for this field
+		favoriteRepository.deleteAll(favoriteRepository.findByField_Id(id));
+
+		// 4. Finally, delete the field
 		fieldRepository.deleteById(id);
 	}
 

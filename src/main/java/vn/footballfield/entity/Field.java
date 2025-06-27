@@ -52,7 +52,7 @@ public class Field {
 	private Boolean outdoor;
 
 	@ManyToOne
-	@JoinColumn(name = "owner_id", nullable = false)
+	@JoinColumn(name = "owner_id", nullable = true)
 	private Owner owner;
 
 	@OneToMany(mappedBy = "field", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -122,4 +122,3 @@ public class Field {
 	}
 
 }
-
