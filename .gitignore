@@ -40,3 +40,5 @@ build/
 # Ignore application.properties to avoid pushing sensitive data
 application.properties
 
+# Ignore Firebase Service Account Key
+src/main/resources/firebase-service-account.json
