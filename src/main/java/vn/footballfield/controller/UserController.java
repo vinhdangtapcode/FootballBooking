@@ -29,8 +29,8 @@ public class UserController {
 	private vn.footballfield.repository.NotificationRepository notificationRepository;
 
 	public UserController(UserService userService,
-	                      AuthenticationManager authenticationManager,
-	                      JwtUtil jwtUtil) {
+			AuthenticationManager authenticationManager,
+			JwtUtil jwtUtil) {
 		this.userService = userService;
 		this.authenticationManager = authenticationManager;
 		this.jwtUtil = jwtUtil;
@@ -88,7 +88,8 @@ public class UserController {
 	// API: Get current user's profile (not admin, not by id)
 	@GetMapping("/me")
 	public ResponseEntity<User> getCurrentUserProfile() {
-		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+				.getName();
 		return userService.findByEmail(email)
 				.map(user -> new ResponseEntity<>(user, HttpStatus.OK))
 				.orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -96,9 +97,11 @@ public class UserController {
 
 	@PutMapping
 	public ResponseEntity<User> updateCurrentUser(@RequestBody User userUpdate) {
-		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+				.getName();
 		User user = userService.findByEmail(email).orElse(null);
-		if (user == null) return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		if (user == null)
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 		user.setName(userUpdate.getName());
 		user.setEmail(userUpdate.getEmail());
 		user.setPhone(userUpdate.getPhone());
@@ -108,7 +111,8 @@ public class UserController {
 
 	@PostMapping("/change-password")
 	public ResponseEntity<?> changePassword(@RequestBody vn.footballfield.dto.ChangePasswordRequest request) {
-		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+				.getName();
 		try {
 			userService.changePassword(email, request.getOldPassword(), request.getNewPassword());
 			return ResponseEntity.ok().build();
@@ -120,7 +124,7 @@ public class UserController {
 	// ADMIN reset password cho user khác
 	@PostMapping("/{id:\\d+}/reset-password")
 	public ResponseEntity<?> adminResetPassword(@PathVariable Integer id,
-	                                          @Valid @RequestBody vn.footballfield.dto.AdminResetPasswordRequest request) {
+			@Valid @RequestBody vn.footballfield.dto.AdminResetPasswordRequest request) {
 		try {
 			userService.adminResetPassword(id, request.getNewPassword());
 			return ResponseEntity.ok("Password has been reset successfully");
@@ -132,19 +136,24 @@ public class UserController {
 	// Lấy thông báo của user
 	@GetMapping("/notifications")
 	public ResponseEntity<List<vn.footballfield.entity.Notification>> getUserNotifications() {
-		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+				.getName();
 		vn.footballfield.entity.User user = userService.findByEmail(email).orElse(null);
-		if (user == null) return ResponseEntity.notFound().build();
-		List<vn.footballfield.entity.Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+		if (user == null)
+			return ResponseEntity.notFound().build();
+		List<vn.footballfield.entity.Notification> notifications = notificationRepository
+				.findByUserIdOrderByCreatedAtDesc(user.getId());
 		return ResponseEntity.ok(notifications);
 	}
 
 	// Đánh dấu thông báo là đã đọc
 	@PutMapping("/notifications/{id}")
 	public ResponseEntity<?> markNotificationAsRead(@PathVariable Integer id) {
-		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+				.getName();
 		vn.footballfield.entity.User user = userService.findByEmail(email).orElse(null);
-		if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		if (user == null)
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		var notiOpt = notificationRepository.findById(id);
 		if (notiOpt.isEmpty() || !notiOpt.get().getUserId().equals(user.getId())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Notification not found or not yours");
@@ -158,9 +167,11 @@ public class UserController {
 	// Xóa thông báo
 	@DeleteMapping("/notifications/{id}")
 	public ResponseEntity<?> deleteNotification(@PathVariable Integer id) {
-		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+				.getName();
 		vn.footballfield.entity.User user = userService.findByEmail(email).orElse(null);
-		if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		if (user == null)
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		var notiOpt = notificationRepository.findById(id);
 		if (notiOpt.isEmpty() || !notiOpt.get().getUserId().equals(user.getId())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Notification not found or not yours");
@@ -168,5 +179,23 @@ public class UserController {
 		notificationRepository.deleteById(id);
 		return ResponseEntity.noContent().build();
 	}
-}
 
+	// Cập nhật FCM token cho push notifications
+	@PutMapping("/fcm-token")
+	public ResponseEntity<?> updateFcmToken(@RequestBody java.util.Map<String, String> request) {
+		String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+				.getName();
+		User user = userService.findByEmail(email).orElse(null);
+		if (user == null)
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+		String fcmToken = request.get("fcmToken");
+		if (fcmToken == null || fcmToken.isEmpty()) {
+			return ResponseEntity.badRequest().body("FCM token is required");
+		}
+
+		user.setFcmToken(fcmToken);
+		userService.updateUser(user.getId(), user);
+		return ResponseEntity.ok().build();
+	}
+}

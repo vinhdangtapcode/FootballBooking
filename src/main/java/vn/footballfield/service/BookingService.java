@@ -12,6 +12,7 @@ import vn.footballfield.repository.NotificationRepository;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +31,11 @@ public class BookingService {
 	@Autowired
 	private NotificationRepository notificationRepository;
 
+	@Autowired
+	private PushNotificationService pushNotificationService;
+
+	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
 	public Book createBooking(@Valid Book booking, Integer customerId) {
 		Field fieldFromRequest = booking.getField();
 		if (fieldFromRequest == null || fieldFromRequest.getId() == null) {
@@ -39,15 +45,18 @@ public class BookingService {
 		Field field = fieldRepository.findById(fieldFromRequest.getId())
 				.orElseThrow(() -> new RuntimeException("Field not found"));
 
-		if (!Boolean.TRUE.equals(field.getAvailable())) {  // Kiểm tra an toàn
+		if (!Boolean.TRUE.equals(field.getAvailable())) { // Kiểm tra an toàn
 			throw new RuntimeException("Field not available");
 		}
 
-		// Kiểm tra trùng lịch đặt sân (chỉ overlap thực sự mới không cho đặt, đặt liên tiếp thì cho phép)
+		// Kiểm tra trùng lịch đặt sân (chỉ overlap thực sự mới không cho đặt, đặt liên
+		// tiếp thì cho phép)
 		List<Book> existingBookings = bookingRepository.findByField_Id(field.getId());
 		for (Book b : existingBookings) {
-			if (b.getFromTime() != null && b.getToTime() != null && booking.getFromTime() != null && booking.getToTime() != null) {
-				boolean overlap = booking.getFromTime().isBefore(b.getToTime()) && booking.getToTime().isAfter(b.getFromTime());
+			if (b.getFromTime() != null && b.getToTime() != null && booking.getFromTime() != null
+					&& booking.getToTime() != null) {
+				boolean overlap = booking.getFromTime().isBefore(b.getToTime())
+						&& booking.getToTime().isAfter(b.getFromTime());
 				if (overlap) {
 					throw new RuntimeException("Sân đã được đặt vào thời điểm này");
 				}
@@ -57,14 +66,30 @@ public class BookingService {
 		booking.setCustomerId(customerId);
 		booking.setField(field); // Gán lại đối tượng Field từ DB cho booking
 		// Set customer object for serialization
-		booking.setCustomer(userRepository.findById(customerId).orElse(null));
+		vn.footballfield.entity.User customer = userRepository.findById(customerId).orElse(null);
+		booking.setCustomer(customer);
 		Book savedBooking = bookingRepository.save(booking);
+
+		// Format thời gian để hiển thị đẹp hơn
+		String fromTimeStr = booking.getFromTime() != null ? booking.getFromTime().format(TIME_FORMATTER) : "";
+		String toTimeStr = booking.getToTime() != null ? booking.getToTime().format(TIME_FORMATTER) : "";
+		String customerName = customer != null ? customer.getName() : "Khách hàng";
 
 		// Tạo thông báo cho người dùng
 		Notification userNoti = new Notification();
 		userNoti.setUserId(customerId);
-		userNoti.setMessage("Bạn đã đặt sân '" + field.getName() + "' thành công từ " + booking.getFromTime() + " đến " + booking.getToTime() + ".");
+		String userMessage = "Bạn đã đặt sân '" + field.getName() + "' thành công từ " + fromTimeStr + " đến "
+				+ toTimeStr + ".";
+		userNoti.setMessage(userMessage);
 		notificationRepository.save(userNoti);
+
+		// Gửi push notification cho người dùng
+		if (customer != null && customer.getFcmToken() != null) {
+			pushNotificationService.sendNotification(
+					customer.getFcmToken(),
+					"Đặt sân thành công! ⚽",
+					"Bạn đã đặt sân '" + field.getName() + "' từ " + fromTimeStr + " đến " + toTimeStr);
+		}
 
 		// Tạo thông báo cho chủ sân
 		if (field.getOwner() != null) {
@@ -76,9 +101,19 @@ public class BookingService {
 			if (ownerUser != null) {
 				Notification ownerNoti = new Notification();
 				ownerNoti.setUserId(ownerUser.getId());
-				String customerName = booking.getCustomer() != null ? booking.getCustomer().getName() : "Khách hàng";
-				ownerNoti.setMessage("Sân '" + field.getName() + "' của bạn đã được " + customerName + " đặt từ " + booking.getFromTime() + " đến " + booking.getToTime() + ".");
+				String ownerMessage = "Sân '" + field.getName() + "' của bạn đã được " + customerName + " đặt từ "
+						+ fromTimeStr + " đến " + toTimeStr + ".";
+				ownerNoti.setMessage(ownerMessage);
 				notificationRepository.save(ownerNoti);
+
+				// Gửi push notification cho chủ sân
+				if (ownerUser.getFcmToken() != null) {
+					pushNotificationService.sendNotification(
+							ownerUser.getFcmToken(),
+							"Có khách đặt sân mới! 🎉",
+							customerName + " đã đặt sân '" + field.getName() + "' từ " + fromTimeStr + " đến "
+									+ toTimeStr);
+				}
 			}
 		}
 

@@ -43,6 +43,11 @@ public class User {
 	@Column(name = "picture_url")
 	private String pictureUrl;
 
+	// FCM token for push notifications
+	@Size(max = 500)
+	@Column(name = "fcm_token")
+	private String fcmToken;
+
 	// Getters and Setters
 	public Integer getId() {
 		return id;
@@ -106,5 +111,13 @@ public class User {
 
 	public void setPictureUrl(String pictureUrl) {
 		this.pictureUrl = pictureUrl;
+	}
+
+	public String getFcmToken() {
+		return fcmToken;
+	}
+
+	public void setFcmToken(String fcmToken) {
+		this.fcmToken = fcmToken;
 	}
 }
