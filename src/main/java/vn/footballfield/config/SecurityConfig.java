@@ -30,11 +30,11 @@ public class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
-	// Định nghĩa bean cấu hình CORS
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(List.of("http://localhost:57918")); // Cho phép front-end
+		// Cho phép tất cả origins (Flutter app, web, mobile, etc.)
+		configuration.setAllowedOriginPatterns(List.of("*"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization"));
 		configuration.setAllowCredentials(true);
@@ -46,7 +46,8 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		// Không cần gọi http.cors() nữa vì bean corsConfigurationSource đã được đăng ký.
+		// Không cần gọi http.cors() nữa vì bean corsConfigurationSource đã được đăng
+		// ký.
 		http
 				.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -55,12 +56,13 @@ public class SecurityConfig {
 						.requestMatchers(
 								"/api/users/register",
 								"/api/users/login",
+								"/api/auth/**",
 								"/danh-sach-san",
 								"/swagger-ui.html",
 								"/swagger-ui/**",
 								"/v3/api-docs/**",
-								"/api-docs/**"
-						).permitAll()
+								"/api-docs/**")
+						.permitAll()
 
 						// ADMIN only - quản lý hệ thống
 						.requestMatchers("/api/stadiums/**").hasRole("ADMIN")
@@ -80,13 +82,12 @@ public class SecurityConfig {
 						.requestMatchers(
 								"/api/users/me",
 								"/api/users/change-password",
-								"/api/users/notifications/**"
-						).authenticated()
+								"/api/users/notifications/**")
+						.authenticated()
 						.requestMatchers(HttpMethod.PUT, "/api/users").authenticated()
 
 						// Mặc định yêu cầu đăng nhập
-						.anyRequest().authenticated()
-				)
+						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();

@@ -23,7 +23,7 @@ public class User {
 	@Column(unique = true)
 	private String email;
 
-	@NotBlank
+	// Password can be null for OAuth users
 	@Size(max = 255)
 	private String password;
 
@@ -34,17 +34,77 @@ public class User {
 	@Size(max = 20)
 	private String role;
 
+	// Google OAuth fields
+	@Size(max = 100)
+	@Column(name = "google_id", unique = true)
+	private String googleId;
+
+	@Size(max = 500)
+	@Column(name = "picture_url")
+	private String pictureUrl;
+
 	// Getters and Setters
-	public Integer getId() { return id; }
-	public void setId(Integer id) { this.id = id; }
-	public String getName() { return name; }
-	public void setName(String name) { this.name = name; }
-	public String getEmail() { return email; }
-	public void setEmail(String email) { this.email = email; }
-	public String getPassword() { return password; }
-	public void setPassword(String password) { this.password = password; }
-	public String getPhone() { return phone; }
-	public void setPhone(String phone) { this.phone = phone; }
-	public String getRole() { return role; }
-	public void setRole(String role) { this.role = role; }
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
+	}
+
+	public String getGoogleId() {
+		return googleId;
+	}
+
+	public void setGoogleId(String googleId) {
+		this.googleId = googleId;
+	}
+
+	public String getPictureUrl() {
+		return pictureUrl;
+	}
+
+	public void setPictureUrl(String pictureUrl) {
+		this.pictureUrl = pictureUrl;
+	}
 }
