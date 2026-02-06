@@ -34,6 +34,9 @@ public class BookingService {
 	@Autowired
 	private PushNotificationService pushNotificationService;
 
+	@Autowired
+	private ChatService chatService;
+
 	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
 	public Book createBooking(@Valid Book booking, Integer customerId) {
@@ -115,6 +118,18 @@ public class BookingService {
 									+ toTimeStr);
 				}
 			}
+		}
+
+		// Gửi tin nhắn thông báo đặt sân vào cuộc hội thoại
+		if (field.getOwner() != null) {
+			chatService.sendBookingNotificationMessage(
+					customerId,
+					field.getOwner().getId(),
+					field.getId(),
+					field.getName(),
+					fromTimeStr,
+					toTimeStr,
+					customerName);
 		}
 
 		return savedBooking;
